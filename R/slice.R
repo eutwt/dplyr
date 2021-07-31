@@ -133,13 +133,8 @@ slice_head <- function(.data, ..., n, prop) {
 #' @export
 slice_head.data.frame <- function(.data, ..., n, prop) {
   ellipsis::check_dots_empty()
-  size <- check_slice_size(n, prop, "slice_head")
-  idx <- switch(size$type,
-    n =    function(n) seq2(1, min(size$n, n)),
-    n_neg = function(n) if(-size$n > n) 0 else seq2(1, n + size$n),
-    prop = function(n) seq2(1, min(size$prop * n, n))
-  )
-
+  size <- get_slice_size(n, prop, "slice_head")
+  idx <- function(n) seq2(1, min(size(n), n))
   slice(.data, idx(dplyr::n()))
 }
 
@@ -152,12 +147,8 @@ slice_tail <- function(.data, ..., n, prop) {
 #' @export
 slice_tail.data.frame <- function(.data, ..., n, prop) {
   ellipsis::check_dots_empty()
-  size <- check_slice_size(n, prop, "slice_tail")
-  idx <- switch(size$type,
-    n =    function(n) seq2(max(n - size$n + 1, 1), n),
-    n_neg = function(n) seq2(max(1 - size$n, 0), n),
-    prop = function(n) seq2(max(ceiling(n - size$prop * n) + 1, 1), n)
-  )
+  size <- get_slice_size(n, prop, "slice_tail")
+  idx <- function(n) seq2(max(ceiling(n - size(n)) + 1, 1), n)
   slice(.data, idx(dplyr::n()))
 }
 
@@ -178,17 +169,11 @@ slice_min.data.frame <- function(.data, order_by, ..., n, prop, with_ties = TRUE
   }
 
   ellipsis::check_dots_empty()
-  size <- check_slice_size(n, prop, "slice_min")
+  size <- get_slice_size(n, prop, "slice_min")
   if (with_ties) {
-    idx <- switch(size$type,
-      n =    function(x, n) head(order(x), smaller_ranks(x, size$n)),
-      prop = function(x, n) head(order(x), smaller_ranks(x, size$prop * n))
-    )
+    idx <- function(x, n) head(order(x), smaller_ranks(x, size(n)))
   } else {
-    idx <- switch(size$type,
-      n =    function(x, n) head(order(x), size$n),
-      prop = function(x, n) head(order(x), size$prop * n)
-    )
+    idx <- function(x, n) head(order(x), size(n))
   }
   slice(.data, idx({{ order_by }}, dplyr::n()))
 }
@@ -205,21 +190,13 @@ slice_max.data.frame <- function(.data, order_by, ..., n, prop, with_ties = TRUE
     abort("argument `order_by` is missing, with no default.")
   }
   ellipsis::check_dots_empty()
-  size <- check_slice_size(n, prop, "slice_max")
+  size <- get_slice_size(n, prop, "slice_max")
   if (with_ties) {
-    idx <- switch(size$type,
-      n =    function(x, n) head(
-        order(x, decreasing = TRUE), smaller_ranks(desc(x), size$n)
-      ),
-      prop = function(x, n) head(
-        order(x, decreasing = TRUE), smaller_ranks(desc(x), size$prop * n)
-      )
+    idx <- function(x, n) head(
+        order(x, decreasing = TRUE), smaller_ranks(desc(x), size(n))
     )
   } else {
-    idx <- switch(size$type,
-      n =    function(x, n) head(order(x, decreasing = TRUE), size$n),
-      prop = function(x, n) head(order(x, decreasing = TRUE), size$prop * n)
-    )
+    idx <- function(x, n) head(order(x, decreasing = TRUE), size(n))
   }
 
   slice(.data, idx({{ order_by }}, dplyr::n()))
@@ -238,12 +215,9 @@ slice_sample <- function(.data, ..., n, prop, weight_by = NULL, replace = FALSE)
 
 #' @export
 slice_sample.data.frame <- function(.data, ..., n, prop, weight_by = NULL, replace = FALSE) {
-  size <- check_slice_size(n, prop, "slice_sample")
   ellipsis::check_dots_empty()
-  idx <- switch(size$type,
-    n =    function(x, n) sample_int(n, size$n, replace = replace, wt = x),
-    prop = function(x, n) sample_int(n, size$prop * n, replace = replace, wt = x),
-  )
+  size <- get_slice_size(n, prop, "slice_sample")
+  idx <- function(x, n) sample_int(n, size(n), replace = replace, wt = x)
   slice(.data, idx({{ weight_by }}, dplyr::n()))
 }
 
@@ -303,38 +277,41 @@ check_constant <- function(x, name, fn) {
   })
 }
 
-check_slice_size <- function(n, prop, .slice_fn = "check_slice_size") {
+get_slice_size <- function(n, prop, .slice_fn = "get_slice_size") {
   if (missing(n) && missing(prop)) {
-    list(type = "n", n = 1L)
+    arg_provided <- "n"
+    size <- 1
   } else if (!missing(n) && missing(prop)) {
-    n <- check_constant(n, "n", .slice_fn)
-    if (!is.numeric(n) || length(n) != 1) {
-      abort("`n` must be a single number.")
-    }
-    if (is.na(n)) {
-      abort("`n` must be a non-missing number.")
-    }
-    if (n < 0) { 
-      if (.slice_fn %in% c("slice_head", "slice_tail")) {
-        list(type = "n_neg", n = n)
-      } else {
-        abort("`n` must be a positive number")
-      }
-    } else {
-      list(type = "n", n = n)
-    }
+    arg_provided <- "n"
+    size <- check_constant(n, arg_provided, .slice_fn)
   } else if (!missing(prop) && missing(n)) {
-    prop <- check_constant(prop, "prop", .slice_fn)
-    if (!is.numeric(prop) || length(prop) != 1) {
-      abort("`prop` must be a single number")
-    }
-    if (is.na(prop) || prop < 0) {
-      abort("`prop` must be a non-missing positive number.")
-    }
-    list(type = "prop", prop = prop)
+    arg_provided <- "prop"
+    size <- check_constant(prop, arg_provided, .slice_fn)
   } else {
     abort("Must supply exactly one of `n` and `prop` arguments.")
   }
+
+  if (!is.numeric(size) || length(size) != 1) {
+    abort(glue("`{arg_provided}` must be a single number."))
+  }
+  if (is.na(size)) {
+    abort("`{arg_provided}` must be a non-missing number.")
+  }
+  if (size < 0 && !.slice_fn %in% c("slice_head", "slice_tail")) {
+    abort("`{arg_provided}` must be a positive number")
+  } 
+
+  compute_size <- switch(arg_provided,
+    n = function(n, size){
+      if (size < 0) n + size else size 
+    },
+    prop = function(n, size){
+      if (size < 0) n + size * n else size * n
+    }
+  )
+
+  purrr::partial(compute_size, size = size)
+
 }
 
 sample_int <- function(n, size, replace = FALSE, wt = NULL) {
