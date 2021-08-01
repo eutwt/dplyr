@@ -133,7 +133,8 @@ slice_head <- function(.data, ..., n, prop) {
 #' @export
 slice_head.data.frame <- function(.data, ..., n, prop) {
   ellipsis::check_dots_empty()
-  size <- get_slice_size(n, prop, "slice_head")
+  name <- pick_name_provided(c('n', 'prop'))
+  size <- get_slice_size(n, prop, name, "slice_head")
   idx <- function(n) seq2(1, min(size(n), n))
   slice(.data, idx(dplyr::n()))
 }
@@ -147,7 +148,8 @@ slice_tail <- function(.data, ..., n, prop) {
 #' @export
 slice_tail.data.frame <- function(.data, ..., n, prop) {
   ellipsis::check_dots_empty()
-  size <- get_slice_size(n, prop, "slice_tail")
+  name <- pick_name_provided(c('n', 'prop'))
+  size <- get_slice_size(n, prop, name, "slice_tail")
   idx <- function(n) seq2(max(ceiling(n - size(n)) + 1, 1), n)
   slice(.data, idx(dplyr::n()))
 }
@@ -169,7 +171,8 @@ slice_min.data.frame <- function(.data, order_by, ..., n, prop, with_ties = TRUE
   }
 
   ellipsis::check_dots_empty()
-  size <- get_slice_size(n, prop, "slice_min")
+  name <- pick_name_provided(c('n', 'prop'))
+  size <- get_slice_size(n, prop, name, "slice_min")
   if (with_ties) {
     idx <- function(x, n) head(order(x), smaller_ranks(x, size(n)))
   } else {
@@ -190,7 +193,8 @@ slice_max.data.frame <- function(.data, order_by, ..., n, prop, with_ties = TRUE
     abort("argument `order_by` is missing, with no default.")
   }
   ellipsis::check_dots_empty()
-  size <- get_slice_size(n, prop, "slice_max")
+  name <- pick_name_provided(c('n', 'prop'))
+  size <- get_slice_size(n, prop, name, "slice_max")
   if (with_ties) {
     idx <- function(x, n) head(
         order(x, decreasing = TRUE), smaller_ranks(desc(x), size(n))
@@ -216,7 +220,8 @@ slice_sample <- function(.data, ..., n, prop, weight_by = NULL, replace = FALSE)
 #' @export
 slice_sample.data.frame <- function(.data, ..., n, prop, weight_by = NULL, replace = FALSE) {
   ellipsis::check_dots_empty()
-  size <- get_slice_size(n, prop, "slice_sample")
+  name <- pick_name_provided(c('n', 'prop'))
+  size <- get_slice_size(n, prop, name, "slice_sample")
   idx <- function(x, n) sample_int(n, size(n), replace = replace, wt = x)
   slice(.data, idx({{ weight_by }}, dplyr::n()))
 }
@@ -268,6 +273,18 @@ slice_rows <- function(.data, ...) {
   vec_c(!!!slice_indices, .ptype = integer())
 }
 
+pick_name_provided <- function(possible_args){
+  all_args <- call_args_names(
+    match.call(def = sys.function(-1), call = sys.call(-1))
+  )
+  arg_name <- intersect(possible_args, all_args)
+  if (length(arg_name) > 1) {
+    char_arg_list <- glue_collapse(glue("`{possible_args}`"), sep = ", ")
+    abort(glue("Must provide exactly one of the following arguments: {char_arg_list}"))
+  }
+  arg_name
+}
+
 check_constant <- function(x, name, fn) {
   withCallingHandlers(force(x), error = function(e) {
     abort(c(
@@ -277,31 +294,22 @@ check_constant <- function(x, name, fn) {
   })
 }
 
-get_slice_size <- function(n, prop, .slice_fn = "get_slice_size") {
-  if (missing(n) && missing(prop)) {
-    arg_provided <- "n"
-    size <- 1
-  } else if (!missing(n) && missing(prop)) {
-    arg_provided <- "n"
-    size <- check_constant(n, arg_provided, .slice_fn)
-  } else if (!missing(prop) && missing(n)) {
-    arg_provided <- "prop"
-    size <- check_constant(prop, arg_provided, .slice_fn)
-  } else {
-    abort("Must supply exactly one of `n` and `prop` arguments.")
-  }
-
+get_slice_size <- function(n, prop, name, .slice_fn = "get_slice_size") {
+  size <- switch(name,
+    n = check_constant(n, name, .slice_fn),
+    prop = check_constant(prop, name, .slice_fn)
+  )
   if (!is.numeric(size) || length(size) != 1) {
-    abort(glue("`{arg_provided}` must be a single number."))
+    abort(glue("`{name}` must be a single number."))
   }
   if (is.na(size)) {
-    abort("`{arg_provided}` must be a non-missing number.")
+    abort("`{name}` must be a non-missing number.")
   }
   if (size < 0 && !.slice_fn %in% c("slice_head", "slice_tail")) {
-    abort("`{arg_provided}` must be a positive number")
+    abort("`{name}` must be a positive number")
   } 
 
-  compute_size <- switch(arg_provided,
+  compute_size <- switch(name,
     n = function(n, size){
       if (size < 0) n + size else size 
     },
@@ -310,8 +318,7 @@ get_slice_size <- function(n, prop, .slice_fn = "get_slice_size") {
     }
   )
 
-  purrr::partial(compute_size, size = size)
-
+  function(n) compute_size(n, size)
 }
 
 sample_int <- function(n, size, replace = FALSE, wt = NULL) {
