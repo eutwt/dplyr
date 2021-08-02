@@ -16,6 +16,13 @@ test_that("transmute preserves grouping", {
   expect_equal(group_data(out), group_data(gf))
 })
 
+test_that("transmute preserves variable order for un-selected group vars", {
+  out <- tibble(x = 1, g = 2) %>%
+    group_by(g) %>%
+    transmute(x = 2)
+  expect_named(out, c("x", "g"))
+})
+
 # Empty transmutes -------------------------------------------------
 
 test_that("transmute with no args returns grouping vars", {
