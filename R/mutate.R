@@ -197,11 +197,12 @@ mutate.data.frame <- function(.data, ...,
     keep <- intersect(names(out), c(group_vars(.data), used, names(cols)))
     dplyr_col_select(out, keep)
   } else if (keep == "none") {
-    keep <- c(
-      # ensure group vars present
-      setdiff(group_vars(.data), names(cols)),
-      # cols might contain NULLs
-      intersect(names(cols), names(out))
+    # cols might contain NULLs
+    cols_keep <- intersect(names(cols), names(out))
+    # for group vars not in cols, add them to output in order from .data
+    keep <- intersect(
+      replace(names(out), names(out) %in% cols_keep, cols_keep),
+      c(cols_keep, group_vars(.data))
     )
     dplyr_col_select(out, keep)
   }
