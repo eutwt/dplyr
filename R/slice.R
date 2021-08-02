@@ -305,9 +305,6 @@ get_slice_size <- function(n, prop, name, .slice_fn = "get_slice_size") {
   if (is.na(size)) {
     abort("`{name}` must be a non-missing number.")
   }
-  if (size < 0 && !.slice_fn %in% c("slice_head", "slice_tail")) {
-    abort("`{name}` must be a positive number")
-  } 
 
   compute_size <- switch(name,
     n = function(n, size){
