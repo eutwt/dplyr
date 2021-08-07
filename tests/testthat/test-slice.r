@@ -266,24 +266,6 @@ test_that("slice_*() checks for empty ...", {
   expect_error(slice_sample(df, 5))
 })
 
-test_that("slice_*() checks for constant n= and prop=", {
-  df <- data.frame(x = 1:10)
-  expect_error(slice_head(df, n = n()), "constant")
-  expect_error(slice_head(df, prop = n()), "constant")
-
-  expect_error(slice_tail(df, n = n()), "constant")
-  expect_error(slice_tail(df, prop = n()), "constant")
-
-  expect_error(slice_min(df, x, n = n()), "constant")
-  expect_error(slice_min(df, x, prop = n()), "constant")
-
-  expect_error(slice_max(df, x, n = n()), "constant")
-  expect_error(slice_max(df, x, prop = n()), "constant")
-
-  expect_error(slice_sample(df, n = n()), "constant")
-  expect_error(slice_sample(df, prop = n()), "constant")
-})
-
 test_that("slice_sample() does not error on zero rows (#5729)", {
   df <- tibble(dummy = character(), weight = numeric(0))
   res <- expect_error(slice_sample(df, prop=0.5, weight_by = weight), NA)
