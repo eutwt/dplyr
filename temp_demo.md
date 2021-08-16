@@ -1,7 +1,6 @@
+# Positive `n`
 
-# Output on CRAN dplyr:
-
-## Positive n
+## CRAN dplyr:
 ``` r
 library(dplyr, warn.conflicts = FALSE)
 df <- data.frame(a = 1:10)
@@ -28,66 +27,7 @@ slice_sample(df, n = 2.6)
 #> 2 6
 ```
 
-## Positive prop
-``` r
-slice_head(df, prop = .26)
-#>   a
-#> 1 1
-#> 2 2
-slice_tail(df, prop = .26)
-#>    a
-#> 1  9
-#> 2 10
-slice_min(df, prop = .26, order_by = a)
-#>   a
-#> 1 1
-#> 2 2
-slice_max(df, prop = .26, order_by = a)
-#>    a
-#> 1 10
-#> 2  9
-set.seed(2021)
-slice_sample(df, prop = .26)
-#>   a
-#> 1 7
-#> 2 6
-```
-
-## Negative n
-``` r
-slice_head(df, n = -2.6)
-#> Error: `n` must be a non-missing positive number.
-slice_tail(df, n = -2.6)
-#> Error: `n` must be a non-missing positive number.
-slice_min(df, n = -2.6, order_by = a)
-#> Error: `n` must be a non-missing positive number.
-slice_max(df, n = -2.6, order_by = a)
-#> Error: `n` must be a non-missing positive number.
-set.seed(2021)
-slice_sample(df, n = -2.6)
-#> Error: `n` must be a non-missing positive number.
-```
-
-## Negative prop
-``` r
-slice_head(df, prop = -.26)
-#> Error: `prop` must be a non-missing positive number.
-slice_tail(df, prop = -.26)
-#> Error: `prop` must be a non-missing positive number.
-slice_min(df, prop = -.26, order_by = a)
-#> Error: `prop` must be a non-missing positive number.
-slice_max(df, prop = -.26, order_by = a)
-#> Error: `prop` must be a non-missing positive number.
-set.seed(2021)
-slice_sample(df, prop = -.26)
-#> Error: `prop` must be a non-missing positive number.
-```
-
-<sup>Created on 2021-08-16 by the [reprex package](https://reprex.tidyverse.org) (v2.0.1)</sup>
-
-# Output with this PR:
-
-## Positive n
+## This PR
 ``` r
 library(dplyr, warn.conflicts = FALSE)
 df <- data.frame(a = 1:10)
@@ -115,7 +55,34 @@ slice_sample(df, n = 2.6)
 #> 2 6
 ```
 
-## Positive prop
+# Positive `prop`
+
+## CRAN dplyr:
+``` r
+slice_head(df, prop = .26)
+#>   a
+#> 1 1
+#> 2 2
+slice_tail(df, prop = .26)
+#>    a
+#> 1  9
+#> 2 10
+slice_min(df, prop = .26, order_by = a)
+#>   a
+#> 1 1
+#> 2 2
+slice_max(df, prop = .26, order_by = a)
+#>    a
+#> 1 10
+#> 2  9
+set.seed(2021)
+slice_sample(df, prop = .26)
+#>   a
+#> 1 7
+#> 2 6
+```
+
+## This PR:
 ```r
 slice_head(df, prop = .26)
 #>   a
@@ -140,7 +107,26 @@ slice_sample(df, prop = .26)
 #> 2 6
 ```
 
-## Negative n
+
+# Negative `n`
+
+## CRAN dplyr:
+``` r
+slice_head(df, n = -2.6)
+#> Error: `n` must be a non-missing positive number.
+slice_tail(df, n = -2.6)
+#> Error: `n` must be a non-missing positive number.
+slice_min(df, n = -2.6, order_by = a)
+#> Error: `n` must be a non-missing positive number.
+slice_max(df, n = -2.6, order_by = a)
+#> Error: `n` must be a non-missing positive number.
+set.seed(2021)
+slice_sample(df, n = -2.6)
+#> Error: `n` must be a non-missing positive number.
+```
+
+## This PR:
+
 ```r
 slice_head(df, n = -2.6)
 #>   a
@@ -195,7 +181,24 @@ slice_sample(df, n = -2.6)
 #> 8  5
 ```
 
-## Negative prop
+# Negative `prop`
+
+## CRAN dplyr:
+``` r
+slice_head(df, prop = -.26)
+#> Error: `prop` must be a non-missing positive number.
+slice_tail(df, prop = -.26)
+#> Error: `prop` must be a non-missing positive number.
+slice_min(df, prop = -.26, order_by = a)
+#> Error: `prop` must be a non-missing positive number.
+slice_max(df, prop = -.26, order_by = a)
+#> Error: `prop` must be a non-missing positive number.
+set.seed(2021)
+slice_sample(df, prop = -.26)
+#> Error: `prop` must be a non-missing positive number.
+```
+
+## This PR:
 ```r
 slice_head(df, prop = -.26)
 #>   a
@@ -250,4 +253,3 @@ slice_sample(df, prop = -.26)
 #> 8  5
 ```
 
-<sup>Created on 2021-08-16 by the [reprex package](https://reprex.tidyverse.org) (v2.0.1)</sup>
