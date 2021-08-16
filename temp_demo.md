@@ -1,0 +1,253 @@
+
+# Output on CRAN dplyr:
+
+## Positive n
+``` r
+library(dplyr, warn.conflicts = FALSE)
+df <- data.frame(a = 1:10)
+
+slice_head(df, n = 2.6)
+#>   a
+#> 1 1
+#> 2 2
+slice_tail(df, n = 2.6)
+#> Error: Can't convert from <double> to <integer> due to loss of precision.
+#> * Locations: 1, 2
+slice_min(df, n = 2.6, order_by = a)
+#>   a
+#> 1 1
+#> 2 2
+slice_max(df, n = 2.6, order_by = a)
+#>    a
+#> 1 10
+#> 2  9
+set.seed(2021)
+slice_sample(df, n = 2.6)
+#>   a
+#> 1 7
+#> 2 6
+```
+
+## Positive prop
+``` r
+slice_head(df, prop = .26)
+#>   a
+#> 1 1
+#> 2 2
+slice_tail(df, prop = .26)
+#>    a
+#> 1  9
+#> 2 10
+slice_min(df, prop = .26, order_by = a)
+#>   a
+#> 1 1
+#> 2 2
+slice_max(df, prop = .26, order_by = a)
+#>    a
+#> 1 10
+#> 2  9
+set.seed(2021)
+slice_sample(df, prop = .26)
+#>   a
+#> 1 7
+#> 2 6
+```
+
+## Negative n
+``` r
+slice_head(df, n = -2.6)
+#> Error: `n` must be a non-missing positive number.
+slice_tail(df, n = -2.6)
+#> Error: `n` must be a non-missing positive number.
+slice_min(df, n = -2.6, order_by = a)
+#> Error: `n` must be a non-missing positive number.
+slice_max(df, n = -2.6, order_by = a)
+#> Error: `n` must be a non-missing positive number.
+set.seed(2021)
+slice_sample(df, n = -2.6)
+#> Error: `n` must be a non-missing positive number.
+```
+
+## Negative prop
+``` r
+slice_head(df, prop = -.26)
+#> Error: `prop` must be a non-missing positive number.
+slice_tail(df, prop = -.26)
+#> Error: `prop` must be a non-missing positive number.
+slice_min(df, prop = -.26, order_by = a)
+#> Error: `prop` must be a non-missing positive number.
+slice_max(df, prop = -.26, order_by = a)
+#> Error: `prop` must be a non-missing positive number.
+set.seed(2021)
+slice_sample(df, prop = -.26)
+#> Error: `prop` must be a non-missing positive number.
+```
+
+<sup>Created on 2021-08-16 by the [reprex package](https://reprex.tidyverse.org) (v2.0.1)</sup>
+
+# Output with this PR:
+
+## Positive n
+``` r
+library(dplyr, warn.conflicts = FALSE)
+df <- data.frame(a = 1:10)
+
+slice_head(df, n = 2.6)
+#>   a
+#> 1 1
+#> 2 2
+slice_tail(df, n = 2.6)
+#>    a
+#> 1  9
+#> 2 10
+slice_min(df, n = 2.6, order_by = a)
+#>   a
+#> 1 1
+#> 2 2
+slice_max(df, n = 2.6, order_by = a)
+#>    a
+#> 1 10
+#> 2  9
+set.seed(2021)
+slice_sample(df, n = 2.6)
+#>   a
+#> 1 7
+#> 2 6
+```
+
+## Positive prop
+```r
+slice_head(df, prop = .26)
+#>   a
+#> 1 1
+#> 2 2
+slice_tail(df, prop = .26)
+#>    a
+#> 1  9
+#> 2 10
+slice_min(df, prop = .26, order_by = a)
+#>   a
+#> 1 1
+#> 2 2
+slice_max(df, prop = .26, order_by = a)
+#>    a
+#> 1 10
+#> 2  9
+set.seed(2021)
+slice_sample(df, prop = .26)
+#>   a
+#> 1 7
+#> 2 6
+```
+
+## Negative n
+```r
+slice_head(df, n = -2.6)
+#>   a
+#> 1 1
+#> 2 2
+#> 3 3
+#> 4 4
+#> 5 5
+#> 6 6
+#> 7 7
+#> 8 8
+slice_tail(df, n = -2.6)
+#>    a
+#> 1  3
+#> 2  4
+#> 3  5
+#> 4  6
+#> 5  7
+#> 6  8
+#> 7  9
+#> 8 10
+slice_min(df, n = -2.6, order_by = a)
+#>   a
+#> 1 1
+#> 2 2
+#> 3 3
+#> 4 4
+#> 5 5
+#> 6 6
+#> 7 7
+#> 8 8
+slice_max(df, n = -2.6, order_by = a)
+#>    a
+#> 1 10
+#> 2  9
+#> 3  8
+#> 4  7
+#> 5  6
+#> 6  5
+#> 7  4
+#> 8  3
+set.seed(2021)
+slice_sample(df, n = -2.6)
+#>    a
+#> 1  7
+#> 2  6
+#> 3  9
+#> 4  2
+#> 5  4
+#> 6  8
+#> 7 10
+#> 8  5
+```
+
+## Negative prop
+```r
+slice_head(df, prop = -.26)
+#>   a
+#> 1 1
+#> 2 2
+#> 3 3
+#> 4 4
+#> 5 5
+#> 6 6
+#> 7 7
+#> 8 8
+slice_tail(df, prop = -.26)
+#>    a
+#> 1  3
+#> 2  4
+#> 3  5
+#> 4  6
+#> 5  7
+#> 6  8
+#> 7  9
+#> 8 10
+slice_min(df, prop = -.26, order_by = a)
+#>   a
+#> 1 1
+#> 2 2
+#> 3 3
+#> 4 4
+#> 5 5
+#> 6 6
+#> 7 7
+#> 8 8
+slice_max(df, prop = -.26, order_by = a)
+#>    a
+#> 1 10
+#> 2  9
+#> 3  8
+#> 4  7
+#> 5  6
+#> 6  5
+#> 7  4
+#> 8  3
+set.seed(2021)
+slice_sample(df, prop = -.26)
+#>    a
+#> 1  7
+#> 2  6
+#> 3  9
+#> 4  2
+#> 5  4
+#> 6  8
+#> 7 10
+#> 8  5
+```
+
+<sup>Created on 2021-08-16 by the [reprex package](https://reprex.tidyverse.org) (v2.0.1)</sup>
