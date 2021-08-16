@@ -40,7 +40,8 @@
 #'
 #'   If `n` is greater than the number of rows in the group (or `prop > 1`),
 #'   the result will be silently truncated to the group size. If the
-#'   `prop`ortion of a group size is not an integer, it is rounded down.
+#'   `prop`ortion of a group size does not yield an integer number of rows, the
+#'   absolute value of `prop*nrow(.data)` is rounded down.
 #' @return
 #' An object of the same type as `.data`. The output has the following
 #' properties:
@@ -133,7 +134,7 @@ slice_head <- function(.data, ..., n, prop) {
 #' @export
 slice_head.data.frame <- function(.data, ..., n, prop) {
   ellipsis::check_dots_empty()
-  size <- compute_slice_size(n, prop, "slice_head")
+  size <- get_slice_size(n, prop, "slice_head")
   idx <- function(n) seq2(1, min(max(size(n), 0), n))
   slice(.data, idx(dplyr::n()))
 }
@@ -147,7 +148,7 @@ slice_tail <- function(.data, ..., n, prop) {
 #' @export
 slice_tail.data.frame <- function(.data, ..., n, prop) {
   ellipsis::check_dots_empty()
-  size <- compute_slice_size(n, prop, "slice_tail")
+  size <- get_slice_size(n, prop, "slice_tail")
   idx <- function(n) seq2(max(n - size(n) + 1, 1), n)
   slice(.data, idx(dplyr::n()))
 }
@@ -169,7 +170,7 @@ slice_min.data.frame <- function(.data, order_by, ..., n, prop, with_ties = TRUE
   }
 
   ellipsis::check_dots_empty()
-  size <- compute_slice_size(n, prop, "slice_min")
+  size <- get_slice_size(n, prop, "slice_min")
   if (with_ties) {
     idx <- function(x, n) head(order(x), smaller_ranks(x, size(n)))
   } else {
@@ -190,7 +191,7 @@ slice_max.data.frame <- function(.data, order_by, ..., n, prop, with_ties = TRUE
     abort("argument `order_by` is missing, with no default.")
   }
   ellipsis::check_dots_empty()
-  size <- compute_slice_size(n, prop, "slice_max")
+  size <- get_slice_size(n, prop, "slice_max")
   if (with_ties) {
     idx <- function(x, n) head(
         order(x, decreasing = TRUE), smaller_ranks(desc(x), size(n))
@@ -216,7 +217,7 @@ slice_sample <- function(.data, ..., n, prop, weight_by = NULL, replace = FALSE)
 #' @export
 slice_sample.data.frame <- function(.data, ..., n, prop, weight_by = NULL, replace = FALSE) {
   ellipsis::check_dots_empty()
-  size <- compute_slice_size(n, prop, "slice_sample")
+  size <- get_slice_size(n, prop, "slice_sample")
   idx <- function(x, n) sample_int(n, size(n), replace = replace, wt = x)
   slice(.data, idx({{ weight_by }}, dplyr::n()))
 }
@@ -297,14 +298,14 @@ check_slice_size <- function(n, prop, .slice_fn = "check_slice_size") {
   }
 }
 
-compute_slice_size <- function(n, prop, .slice_fn = "compute_slice_size") {
+get_slice_size <- function(n, prop, .slice_fn = "get_slice_size") {
   slice_input <- check_slice_size(n, prop, .slice_fn)
 
   if (slice_input$type == "n") {
     if (slice_input$n < 0) {
-      function(n) n + slice_input$n
+      function(n) ceiling(n + slice_input$n)
     } else {
-      function(n) slice_input$n
+      function(n) floor(slice_input$n)
     }
   } else if (slice_input$type == "prop") {
     if (slice_input$prop < 0) {
